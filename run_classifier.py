@@ -147,7 +147,11 @@ def evaluate(args, model, eval_dataloader, metrics):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--arch", default='albert_xlarge', type=str)
+    # parser.add_argument("--arch", default='albert_xlarge', type=str)
+    parser.add_argument("--arch", default='albert_large', type=str)
+    parser.add_argument('--bert_dir', default='pretrain/pytorch/albert_large_zh', type=str)
+    parser.add_argument('--albert_config_path', default='configs/albert_config_large.json', type=str)
+
     parser.add_argument('--task_name', default='lcqmc', type=str)
     parser.add_argument("--train_max_seq_len", default=64, type=int,
                         help="The maximum total input sequence length after tokenization. Sequences longer "
@@ -207,6 +211,10 @@ def main():
     parser.add_argument('--server_ip', type=str, default='', help="For distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="For distant debugging.")
     args = parser.parse_args()
+
+    # Fix bug: Config is wrone from base.py if it is not base
+    config['bert_dir'] = args.bert_dir
+    config['albert_config_path'] = args.albert_config_path
 
     args.model_save_path = config['checkpoint_dir'] / f'{args.arch}'
     args.model_save_path.mkdir(exist_ok=True)
