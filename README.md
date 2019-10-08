@@ -104,62 +104,63 @@ config = BertConfig.from_pretrained(bert_config_file,share_type=share_type)
 ## 下游任务Fine-tuning
 
 １．下载预训练的albert模型，例如下载albert_large_zh.zip，解压到 ~/tmp文件夹下:
-
-`$ tree ~/tmp/`
-`/home/dell/tmp/`
-`└── albert_large_zh`
-    `├── albert_config_large.json`
-    `├── albert_model.ckpt.data-00000-of-00001`
-    `├── albert_model.ckpt.index`
-    `├── albert_model.ckpt.meta`
-    `├── checkpoint`
-    `└── vocab.txt`
-
+```
+$ tree ~/tmp/
+/home/dell/tmp/
+└── albert_large_zh
+    ├── albert_config_large.json
+    ├── albert_model.ckpt.data-00000-of-00001
+    ├── albert_model.ckpt.index
+    ├── albert_model.ckpt.meta
+    ├── checkpoint
+    └── vocab.txt
+```
 
 
 ２．运行`python convert_albert_tf_checkpoint_to_pytorch.py`将TF模型权重转化为pytorch模型权重(默认情况下shar_type=all)
-
-``$python convert_albert_tf_checkpoint_to_pytorch.py \`
-	`--tf_checkpoint_path ~/tmp/albert_large_zh/ \`
-	`--bert_config_file configs/albert_config_large.json \`
-	--pytorch_dump_path pretrain/pytorch/pytorch_model.bin`
-
+```
+$python convert_albert_tf_checkpoint_to_pytorch.py \
+	--tf_checkpoint_path ~/tmp/albert_large_zh/ \
+	--bert_config_file configs/albert_config_large.json \
+	--pytorch_dump_path pretrain/pytorch/pytorch_model.bin
+```
 请参考 convert.sh.
 
 
 
 ３．下载对应的数据集，比如[LCQMC](https://drive.google.com/open?id=1HXYMqsXjmA5uIfu_SFqP7r_vZZG-m_H0)数据集，包含训练、验证和测试集，训练集包含24万口语化描述的中文句子对，标签为1或0，1为句子语义相似，0为语义不相似，将下载文件解压到dataset/lcqmc/。
-
-`$ tree dataset/lcqmc/`
-`dataset/lcqmc/`
-`├── dev.txt`
-`├── __init__.py`
-`├── test.txt`
-`└── train.txt`
-
+```
+$ tree dataset/lcqmc/
+dataset/lcqmc/
+├── dev.txt
+├── __init__.py
+├── test.txt
+└── train.txt
+```
 
 
 ４．运行`python run_classifier.py --do_train`进行Fine-tuning训练
-
-``python run_classifier.py \`
-	`--arch albert_large \`
-	`--albert_config_path configs/albert_config_large.json \`
-	`--bert_dir pretrain/pytorch/albert_large_zh \`
-	`--train_batch_size 24 \`
-	`--num_train_epochs 10 \`
-	--do_train` 
-
+```
+python run_classifier.py \
+	--arch albert_large \
+	--albert_config_path configs/albert_config_large.json \
+	--bert_dir pretrain/pytorch/albert_large_zh \
+	--train_batch_size 24 \
+	--num_train_epochs 10 \
+	--do_train 
+```
 请参考 train.sh.
 
 
 
 5.　运行`python run_classifier.py --do_test`进行test评估
-
-``python run_classifier.py \`
-	`--arch albert_large \`
-	`--albert_config_path configs/albert_config_large.json \`
-	`--bert_dir pretrain/pytorch/albert_large_zh \`
-	--do_test`
+```
+python run_classifier.py \
+	--arch albert_large \
+	--albert_config_path configs/albert_config_large.json \
+	--bert_dir pretrain/pytorch/albert_large_zh \
+	--do_test
+```
 
 请参考 test.sh.
 
