@@ -6,7 +6,7 @@ from configs.base import config
 from common.tools import logger, init_logger
 from argparse import ArgumentParser
 from common.tools import seed_everything
-from model.tokenization_bert import BertTokenizer
+from model.tokenization_albert import AlbertTokenizer
 from callback.progressbar import ProgressBar
 
 MaskedLmInstance = collections.namedtuple("MaskedLmInstance", ["index", "label"])
@@ -123,7 +123,7 @@ def create_instances_from_document(all_documents, document_index, max_seq_length
 
 
 def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_list):
-    """Creates the predictions for the masked LM objective. This is mostly copied from the Google BERT repo, but
+    """Creates the predictions for the masked LM objective. This is mostly copied from the Google ALBERT repo, but
     with several refactors to clean it up and remove a lot of unnecessary variables."""
     cand_indices = []
     for (i, token) in enumerate(tokens):
@@ -238,7 +238,7 @@ def main():
     args = parser.parse_args()
     seed_everything(args.seed)
     logger.info("pregenerate training data parameters:\n %s", args)
-    tokenizer = BertTokenizer(vocab_file=config['data_dir'] / 'vocab.txt', do_lower_case=args.do_lower_case)
+    tokenizer = AlbertTokenizer(vocab_file=config['data_dir'] / 'vocab.txt', do_lower_case=args.do_lower_case)
 
     if args.do_split:
         corpus_path = config['data_dir'] / "corpus/corpus.txt"

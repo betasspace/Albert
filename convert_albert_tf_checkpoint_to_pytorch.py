@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Convert BERT checkpoint."""
+"""Convert ALBERT checkpoint."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -21,16 +21,18 @@ from __future__ import print_function
 import argparse
 import torch
 
-from model.modeling_albert import BertConfig, BertForPreTraining, load_tf_weights_in_albert
+from model.modeling_albert import AlbertConfig, AlbertForPreTraining, load_tf_weights_in_albert
 
 import logging
 logging.basicConfig(level=logging.INFO)
 
+
 def convert_tf_checkpoint_to_pytorch(tf_checkpoint_path, bert_config_file,share_type, pytorch_dump_path):
+
     # Initialise PyTorch model
-    config = BertConfig.from_pretrained(bert_config_file,share_type=share_type)
+    config = AlbertConfig.from_pretrained(bert_config_file,share_type=share_type)
     # print("Building PyTorch model from configuration: {}".format(str(config)))
-    model = BertForPreTraining(config)
+    model = AlbertForPreTraining(config)
 
     # Load weights from tf checkpoint
     load_tf_weights_in_albert(model, config, tf_checkpoint_path)
@@ -52,7 +54,7 @@ if __name__ == "__main__":
                         default = None,
                         type = str,
                         required = True,
-                        help = "The config json file corresponding to the pre-trained BERT model. \n"
+                        help = "The config json file corresponding to the pre-trained ALBERT model. \n"
                             "This specifies the model architecture.")
     parser.add_argument('--share_type',
                         default='all',

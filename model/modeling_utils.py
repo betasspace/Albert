@@ -13,23 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""PyTorch BERT model."""
+"""PyTorch ALBERT model."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
-import copy
-import json
 import logging
 import os
-from io import open
-
-import six
 import torch
 from torch import nn
-from torch.nn import CrossEntropyLoss
-from torch.nn import functional as F
-
 from .configuration_utils import PretrainedConfig
 from .file_utils import cached_path, WEIGHTS_NAME, TF_WEIGHTS_NAME
 
@@ -278,13 +269,13 @@ class PreTrainedModel(nn.Module):
 
         Examples::
 
-            model = BertModel.from_pretrained('bert-base-uncased')    # Download model and configuration from S3 and cache.
-            model = BertModel.from_pretrained('./test/saved_model/')  # E.g. model was saved using `save_pretrained('./test/saved_model/')`
-            model = BertModel.from_pretrained('bert-base-uncased', output_attention=True)  # Update configuration during loading
+            model = AlbertModel.from_pretrained('bert-base-uncased')    # Download model and configuration from S3 and cache.
+            model = AlbertModel.from_pretrained('./test/saved_model/')  # E.g. model was saved using `save_pretrained('./test/saved_model/')`
+            model = AlbertModel.from_pretrained('bert-base-uncased', output_attention=True)  # Update configuration during loading
             assert model.config.output_attention == True
             # Loading from a TF checkpoint file instead of a PyTorch model (slower)
-            config = BertConfig.from_json_file('./tf_model/my_tf_model_config.json')
-            model = BertModel.from_pretrained('./tf_model/my_tf_checkpoint.ckpt.index', from_tf=True, config=config)
+            config = AlbertConfig.from_json_file('./tf_model/my_tf_model_config.json')
+            model = AlbertModel.from_pretrained('./tf_model/my_tf_checkpoint.ckpt.index', from_tf=True, config=config)
 
         """
         config = kwargs.pop('config', None)
@@ -541,193 +532,6 @@ class PoolerAnswerClass(nn.Module):
 
         return x
 
-
-class SQuADHead(nn.Module):
-    r""" A SQuAD head inspired by XLNet.
-
-    Parameters:
-        config (:class:`~pytorch_transformers.XLNetConfig`): Model configuration class with all the parameters of the model.
-
-    Inputs:
-        **hidden_states**: ``torch.FloatTensor`` of shape ``(batch_size, seq_len, hidden_size)``
-            hidden states of sequence tokens
-        **start_positions**: ``torch.LongTensor`` of shape ``(batch_size,)``
-            position of the first token for the labeled span.
-        **end_positions**: ``torch.LongTensor`` of shape ``(batch_size,)``
-            position of the last token for the labeled span.
-        **cls_index**: torch.LongTensor of shape ``(batch_size,)``
-            position of the CLS token. If None, take the last token.
-        **is_impossible**: ``torch.LongTensor`` of shape ``(batch_size,)``
-            Whether the question has a possible answer in the paragraph or not.
-        **p_mask**: (`optional`) ``torch.FloatTensor`` of shape ``(batch_size, seq_len)``
-            Mask of invalid position such as query and special symbols (PAD, SEP, CLS)
-            1.0 means token should be masked.
-
-    Outputs: `Tuple` comprising various elements depending on the configuration (config) and inputs:
-        **loss**: (`optional`, returned if both ``start_positions`` and ``end_positions`` are provided) ``torch.FloatTensor`` of shape ``(1,)``:
-            Classification loss as the sum of start token, end token (and is_impossible if provided) classification losses.
-        **start_top_log_probs**: (`optional`, returned if ``start_positions`` or ``end_positions`` is not provided)
-            ``torch.FloatTensor`` of shape ``(batch_size, config.start_n_top)``
-            Log probabilities for the top config.start_n_top start token possibilities (beam-search).
-        **start_top_index**: (`optional`, returned if ``start_positions`` or ``end_positions`` is not provided)
-            ``torch.LongTensor`` of shape ``(batch_size, config.start_n_top)``
-            Indices for the top config.start_n_top start token possibilities (beam-search).
-        **end_top_log_probs**: (`optional`, returned if ``start_positions`` or ``end_positions`` is not provided)
-            ``torch.FloatTensor`` of shape ``(batch_size, config.start_n_top * config.end_n_top)``
-            Log probabilities for the top ``config.start_n_top * config.end_n_top`` end token possibilities (beam-search).
-        **end_top_index**: (`optional`, returned if ``start_positions`` or ``end_positions`` is not provided)
-            ``torch.LongTensor`` of shape ``(batch_size, config.start_n_top * config.end_n_top)``
-            Indices for the top ``config.start_n_top * config.end_n_top`` end token possibilities (beam-search).
-        **cls_logits**: (`optional`, returned if ``start_positions`` or ``end_positions`` is not provided)
-            ``torch.FloatTensor`` of shape ``(batch_size,)``
-            Log probabilities for the ``is_impossible`` label of the answers.
-    """
-    def __init__(self, config):
-        super(SQuADHead, self).__init__()
-        self.start_n_top = config.start_n_top
-        self.end_n_top = config.end_n_top
-
-        self.start_logits = PoolerStartLogits(config)
-        self.end_logits = PoolerEndLogits(config)
-        self.answer_class = PoolerAnswerClass(config)
-
-    def forward(self, hidden_states, start_positions=None, end_positions=None,
-                cls_index=None, is_impossible=None, p_mask=None):
-        outputs = ()
-
-        start_logits = self.start_logits(hidden_states, p_mask=p_mask)
-
-        if start_positions is not None and end_positions is not None:
-            # If we are on multi-GPU, let's remove the dimension added by batch splitting
-            for x in (start_positions, end_positions, cls_index, is_impossible):
-                if x is not None and x.dim() > 1:
-                    x.squeeze_(-1)
-
-            # during training, compute the end logits based on the ground truth of the start position
-            end_logits = self.end_logits(hidden_states, start_positions=start_positions, p_mask=p_mask)
-
-            loss_fct = CrossEntropyLoss()
-            start_loss = loss_fct(start_logits, start_positions)
-            end_loss = loss_fct(end_logits, end_positions)
-            total_loss = (start_loss + end_loss) / 2
-
-            if cls_index is not None and is_impossible is not None:
-                # Predict answerability from the representation of CLS and START
-                cls_logits = self.answer_class(hidden_states, start_positions=start_positions, cls_index=cls_index)
-                loss_fct_cls = nn.BCEWithLogitsLoss()
-                cls_loss = loss_fct_cls(cls_logits, is_impossible)
-
-                # note(zhiliny): by default multiply the loss by 0.5 so that the scale is comparable to start_loss and end_loss
-                total_loss += cls_loss * 0.5
-
-            outputs = (total_loss,) + outputs
-
-        else:
-            # during inference, compute the end logits based on beam search
-            bsz, slen, hsz = hidden_states.size()
-            start_log_probs = F.softmax(start_logits, dim=-1) # shape (bsz, slen)
-
-            start_top_log_probs, start_top_index = torch.topk(start_log_probs, self.start_n_top, dim=-1) # shape (bsz, start_n_top)
-            start_top_index_exp = start_top_index.unsqueeze(-1).expand(-1, -1, hsz) # shape (bsz, start_n_top, hsz)
-            start_states = torch.gather(hidden_states, -2, start_top_index_exp) # shape (bsz, start_n_top, hsz)
-            start_states = start_states.unsqueeze(1).expand(-1, slen, -1, -1) # shape (bsz, slen, start_n_top, hsz)
-
-            hidden_states_expanded = hidden_states.unsqueeze(2).expand_as(start_states) # shape (bsz, slen, start_n_top, hsz)
-            p_mask = p_mask.unsqueeze(-1) if p_mask is not None else None
-            end_logits = self.end_logits(hidden_states_expanded, start_states=start_states, p_mask=p_mask)
-            end_log_probs = F.softmax(end_logits, dim=1) # shape (bsz, slen, start_n_top)
-
-            end_top_log_probs, end_top_index = torch.topk(end_log_probs, self.end_n_top, dim=1) # shape (bsz, end_n_top, start_n_top)
-            end_top_log_probs = end_top_log_probs.view(-1, self.start_n_top * self.end_n_top)
-            end_top_index = end_top_index.view(-1, self.start_n_top * self.end_n_top)
-
-            start_states = torch.einsum("blh,bl->bh", hidden_states, start_log_probs)
-            cls_logits = self.answer_class(hidden_states, start_states=start_states, cls_index=cls_index)
-
-            outputs = (start_top_log_probs, start_top_index, end_top_log_probs, end_top_index, cls_logits) + outputs
-
-        # return start_top_log_probs, start_top_index, end_top_log_probs, end_top_index, cls_logits
-        # or (if labels are provided) (total_loss,)
-        return outputs
-
-
-class SequenceSummary(nn.Module):
-    r""" Compute a single vector summary of a sequence hidden states according to various possibilities:
-        Args of the config class:
-            summary_type:
-                - 'last' => [default] take the last token hidden state (like XLNet)
-                - 'first' => take the first token hidden state (like Bert)
-                - 'mean' => take the mean of all tokens hidden states
-                - 'cls_index' => supply a Tensor of classification token position (GPT/GPT-2)
-                - 'attn' => Not implemented now, use multi-head attention
-            summary_use_proj: Add a projection after the vector extraction
-            summary_proj_to_labels: If True, the projection outputs to config.num_labels classes (otherwise to hidden_size). Default: False.
-            summary_activation: 'tanh' => add a tanh activation to the output, Other => no activation. Default
-            summary_first_dropout: Add a dropout before the projection and activation
-            summary_last_dropout: Add a dropout after the projection and activation
-    """
-    def __init__(self, config):
-        super(SequenceSummary, self).__init__()
-
-        self.summary_type = config.summary_type if hasattr(config, 'summary_use_proj') else 'last'
-        if self.summary_type == 'attn':
-            # We should use a standard multi-head attention module with absolute positional embedding for that.
-            # Cf. https://github.com/zihangdai/xlnet/blob/master/modeling.py#L253-L276
-            # We can probably just use the multi-head attention module of PyTorch >=1.1.0
-            raise NotImplementedError
-
-        self.summary = Identity()
-        if hasattr(config, 'summary_use_proj') and config.summary_use_proj:
-            if hasattr(config, 'summary_proj_to_labels') and config.summary_proj_to_labels and config.num_labels > 0:
-                num_classes = config.num_labels
-            else:
-                num_classes = config.hidden_size
-            self.summary = nn.Linear(config.hidden_size, num_classes)
-
-        self.activation = Identity()
-        if hasattr(config, 'summary_activation') and config.summary_activation == 'tanh':
-            self.activation = nn.Tanh()
-
-        self.first_dropout = Identity()
-        if hasattr(config, 'summary_first_dropout') and config.summary_first_dropout > 0:
-            self.first_dropout = nn.Dropout(config.summary_first_dropout)
-
-        self.last_dropout = Identity()
-        if hasattr(config, 'summary_last_dropout') and config.summary_last_dropout > 0:
-            self.last_dropout = nn.Dropout(config.summary_last_dropout)
-
-    def forward(self, hidden_states, cls_index=None):
-        """ hidden_states: float Tensor in shape [bsz, seq_len, hidden_size], the hidden-states of the last layer.
-            cls_index: [optional] position of the classification token if summary_type == 'cls_index',
-                shape (bsz,) or more generally (bsz, ...) where ... are optional leading dimensions of hidden_states.
-                if summary_type == 'cls_index' and cls_index is None:
-                    we take the last token of the sequence as classification token
-        """
-        if self.summary_type == 'last':
-            output = hidden_states[:, -1]
-        elif self.summary_type == 'first':
-            output = hidden_states[:, 0]
-        elif self.summary_type == 'mean':
-            output = hidden_states.mean(dim=1)
-        elif self.summary_type == 'cls_index':
-            if cls_index is None:
-                cls_index = torch.full_like(hidden_states[..., :1, :], hidden_states.shape[-2]-1, dtype=torch.long)
-            else:
-                cls_index = cls_index.unsqueeze(-1).unsqueeze(-1)
-                cls_index = cls_index.expand((-1,) * (cls_index.dim()-1) + (hidden_states.size(-1),))
-            # shape of cls_index: (bsz, XX, 1, hidden_size) where XX are optional leading dim of hidden_states
-            output = hidden_states.gather(-2, cls_index).squeeze(-2) # shape (bsz, XX, hidden_size)
-        elif self.summary_type == 'attn':
-            raise NotImplementedError
-
-        output = self.first_dropout(output)
-        output = self.summary(output)
-        output = self.activation(output)
-        output = self.last_dropout(output)
-
-        return output
-
-
 def prune_linear_layer(layer, index, dim=0):
     """ Prune a linear layer (a model parameters) to keep only entries in index.
         Return the pruned layer as a new layer with requires_grad=True.
@@ -753,38 +557,3 @@ def prune_linear_layer(layer, index, dim=0):
     return new_layer
 
 
-def prune_conv1d_layer(layer, index, dim=1):
-    """ Prune a Conv1D layer (a model parameters) to keep only entries in index.
-        A Conv1D work as a Linear layer (see e.g. BERT) but the weights are transposed.
-        Return the pruned layer as a new layer with requires_grad=True.
-        Used to remove heads.
-    """
-    index = index.to(layer.weight.device)
-    W = layer.weight.index_select(dim, index).clone().detach()
-    if dim == 0:
-        b = layer.bias.clone().detach()
-    else:
-        b = layer.bias[index].clone().detach()
-    new_size = list(layer.weight.size())
-    new_size[dim] = len(index)
-    new_layer = Conv1D(new_size[1], new_size[0]).to(layer.weight.device)
-    new_layer.weight.requires_grad = False
-    new_layer.weight.copy_(W.contiguous())
-    new_layer.weight.requires_grad = True
-    new_layer.bias.requires_grad = False
-    new_layer.bias.copy_(b.contiguous())
-    new_layer.bias.requires_grad = True
-    return new_layer
-
-
-def prune_layer(layer, index, dim=None):
-    """ Prune a Conv1D or nn.Linear layer (a model parameters) to keep only entries in index.
-        Return the pruned layer as a new layer with requires_grad=True.
-        Used to remove heads.
-    """
-    if isinstance(layer, nn.Linear):
-        return prune_linear_layer(layer, index, dim=0 if dim is None else dim)
-    elif isinstance(layer, Conv1D):
-        return prune_conv1d_layer(layer, index, dim=1 if dim is None else dim)
-    else:
-        raise ValueError("Can't prune layer of class {}".format(layer.__class__))

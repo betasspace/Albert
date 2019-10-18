@@ -1,7 +1,7 @@
 import torch
 import csv
 from callback.progressbar import ProgressBar
-from model.tokenization_bert import BertTokenizer
+from model.tokenization_albert import AlbertTokenizer
 from common.tools import logger
 from torch.utils.data import TensorDataset
 
@@ -37,11 +37,11 @@ class InputFeature(object):
         self.input_len = input_len
 
 
-class BertProcessor(object):
+class AlbertProcessor(object):
     """Base class for data converters for sequence classification data sets."""
 
     def __init__(self, vocab_path, do_lower_case):
-        self.tokenizer = BertTokenizer(vocab_path, do_lower_case)
+        self.tokenizer = AlbertTokenizer(vocab_path, do_lower_case)
 
     def get_train(self, data_file):
         """Gets a collection of `InputExample`s for the train set."""
@@ -107,7 +107,7 @@ class BertProcessor(object):
 
     def create_features(self, examples, max_seq_len, cached_features_file):
         '''
-        # The convention in BERT is:
+        # The convention in ALBERT is:
         # (a) For sequence pairs:
         #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
         #  type_ids:   0   0  0    0    0     0       0   0   1  1  1  1   1   1

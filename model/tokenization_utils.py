@@ -238,7 +238,7 @@ class PreTrainedTokenizer(object):
 
                 - a string with the `shortcut name` of a predefined tokenizer to load from cache or download, e.g.: ``bert-base-uncased``.
                 - a path to a `directory` containing vocabulary files required by the tokenizer, for instance saved using the :func:`~pytorch_transformers.PreTrainedTokenizer.save_pretrained` method, e.g.: ``./my_model_directory/``.
-                - (not applicable to all derived classes) a path or url to a single saved vocabulary file if and only if the tokenizer only requires a single vocabulary file (e.g. Bert, XLNet), e.g.: ``./my_model_directory/vocab.txt``.
+                - (not applicable to all derived classes) a path or url to a single saved vocabulary file if and only if the tokenizer only requires a single vocabulary file (e.g. Albert, XLNet), e.g.: ``./my_model_directory/vocab.txt``.
 
             cache_dir: (`optional`) string:
                 Path to a directory in which a downloaded predefined tokenizer vocabulary files should be cached if the standard cache should not be used.
@@ -256,19 +256,19 @@ class PreTrainedTokenizer(object):
 
         Examples::
 
-            # We can't instantiate directly the base class `PreTrainedTokenizer` so let's show our examples on a derived class: BertTokenizer
+            # We can't instantiate directly the base class `PreTrainedTokenizer` so let's show our examples on a derived class: AlbertTokenizer
 
             # Download vocabulary from S3 and cache.
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            tokenizer = AlbertTokenizer.from_pretrained('bert-base-uncased')
 
             # If vocabulary files are in a directory (e.g. tokenizer was saved using `save_pretrained('./test/saved_model/')`)
-            tokenizer = BertTokenizer.from_pretrained('./test/saved_model/')
+            tokenizer = AlbertTokenizer.from_pretrained('./test/saved_model/')
 
             # If the tokenizer uses a single vocabulary file, you can point directly to this file
-            tokenizer = BertTokenizer.from_pretrained('./test/saved_model/my_vocab.txt')
+            tokenizer = AlbertTokenizer.from_pretrained('./test/saved_model/my_vocab.txt')
 
             # You can link tokens to special vocabulary when instantiating
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', unk_token='<unk>')
+            tokenizer = AlbertTokenizer.from_pretrained('bert-base-uncased', unk_token='<unk>')
             # You should be sure '<unk>' is in the vocabulary when doing that.
             # Otherwise use tokenizer.add_special_tokens({'unk_token': '<unk>'}) instead)
             assert tokenizer.unk_token == '<unk>'
@@ -422,7 +422,7 @@ class PreTrainedTokenizer(object):
         """ Save the tokenizer vocabulary files together with:
                 - added tokens,
                 - special-tokens-to-class-attributes-mapping,
-                - tokenizer instantiation positional and keywords inputs (e.g. do_lower_case for Bert).
+                - tokenizer instantiation positional and keywords inputs (e.g. do_lower_case for Albert).
 
             This won't save modifications other than (added tokens and special token mapping) you may have
             applied to the tokenizer after the instantion (e.g. modifying tokenizer.do_lower_case after creation).
@@ -492,9 +492,9 @@ class PreTrainedTokenizer(object):
 
         Examples::
 
-            # Let's see how to increase the vocabulary of Bert model and tokenizer
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-            model = BertModel.from_pretrained('bert-base-uncased')
+            # Let's see how to increase the vocabulary of Albert model and tokenizer
+            tokenizer = AlbertTokenizer.from_pretrained('bert-base-uncased')
+            model = AlbertModel.from_pretrained('bert-base-uncased')
 
             num_added_toks = tokenizer.add_tokens(['new_tok1', 'my_new-tok2'])
             print('We have added', num_added_toks, 'tokens')
@@ -530,7 +530,7 @@ class PreTrainedTokenizer(object):
         - special tokens are carefully handled by the tokenizer (they are never split)
         - you can easily refer to special tokens using tokenizer class attributes like `tokenizer.cls_token`. This makes it easy to develop model-agnostic training and fine-tuning scripts.
 
-        When possible, special tokens are already registered for provided pretrained models (ex: BertTokenizer cls_token is already registered to be '[CLS]' and XLM's one is also registered to be '</s>')
+        When possible, special tokens are already registered for provided pretrained models (ex: AlbertTokenizer cls_token is already registered to be '[CLS]' and XLM's one is also registered to be '</s>')
 
         Args:
             special_tokens_dict: dict of string. Keys should be in the list of predefined special attributes:

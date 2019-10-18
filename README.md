@@ -61,7 +61,7 @@ modify the `share_type` parameter:
 在加载`config`时，指定`share_type`参数，如下:
 
 ```python
-config = BertConfig.from_pretrained(bert_config_file,share_type=share_type)
+config = AlbertConfig.from_pretrained(bert_config_file,share_type=share_type)
 ```
 ## Download Pre-trained Models of Chinese
 

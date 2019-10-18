@@ -69,14 +69,17 @@ class PretrainedConfig(object):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **kwargs):
-        r""" Instantiate a :class:`~pytorch_transformers.PretrainedConfig` (or a derived class) from a pre-trained model configuration.
+        r""" Instantiate a :class:`PretrainedConfig` (or a derived class) from a pre-trained model configuration.
 
         Parameters:
             pretrained_model_name_or_path: either:
 
-                - a string with the `shortcut name` of a pre-trained model configuration to load from cache or download, e.g.: ``bert-base-uncased``.
-                - a path to a `directory` containing a configuration file saved using the :func:`~pytorch_transformers.PretrainedConfig.save_pretrained` method, e.g.: ``./my_model_directory/``.
-                - a path or url to a saved configuration JSON `file`, e.g.: ``./my_model_directory/configuration.json``.
+                - a string with the `shortcut name` of a pre-trained model configuration to load from cache or download,
+                	e.g.: ``albert-base-zh``.
+                - a path to a `directory` containing a configuration file saved using the :func:`PretrainedConfig.save_pretrained` method, 
+                	e.g.: ``./my_model_directory/``.
+                - a path or url to a saved configuration JSON `file`,
+                	e.g.: ``./my_model_directory/configuration.json``.
 
             cache_dir: (`optional`) string:
                 Path to a directory in which a downloaded pre-trained model
@@ -97,18 +100,20 @@ class PretrainedConfig(object):
             return_unused_kwargs: (`optional`) bool:
 
                 - If False, then this function returns just the final configuration object.
-                - If True, then this functions returns a tuple `(config, unused_kwargs)` where `unused_kwargs` is a dictionary consisting of the key/value pairs whose keys are not configuration attributes: ie the part of kwargs which has not been used to update `config` and is otherwise ignored.
+                - If True, then this functions returns a tuple `(config, unused_kwargs)` where `unused_kwargs`
+                	is a dictionary consisting of the key/value pairs whose keys are not configuration attributes: 
+                	ie the part of kwargs which has not been used to update `config` and is otherwise ignored.
 
         Examples::
 
             # We can't instantiate directly the base class `PretrainedConfig` so let's show the examples on a
-            # derived class: BertConfig
-            config = BertConfig.from_pretrained('bert-base-uncased')    # Download configuration from S3 and cache.
-            config = BertConfig.from_pretrained('./test/saved_model/')  # E.g. config (or model) was saved using `save_pretrained('./test/saved_model/')`
-            config = BertConfig.from_pretrained('./test/saved_model/my_configuration.json')
-            config = BertConfig.from_pretrained('bert-base-uncased', output_attention=True, foo=False)
+            # derived class: AlbertConfig
+            config = AlbertConfig.from_pretrained('albert-base-zh')    # Download configuration from S3 and cache.
+            config = AlbertConfig.from_pretrained('./test/saved_model/')  # E.g. config (or model) was saved using `save_pretrained('./test/saved_model/')`
+            config = AlbertConfig.from_pretrained('./test/saved_model/my_configuration.json')
+            config = AlbertConfig.from_pretrained('albert-base-zh', output_attention=True, foo=False)
             assert config.output_attention == True
-            config, unused_kwargs = BertConfig.from_pretrained('bert-base-uncased', output_attention=True,
+            config, unused_kwargs = AlbertConfig.from_pretrained('albert-base-zh', output_attention=True,
                                                                foo=False, return_unused_kwargs=True)
             assert config.output_attention == True
             assert unused_kwargs == {'foo': False}
@@ -181,7 +186,7 @@ class PretrainedConfig(object):
 
     @classmethod
     def from_json_file(cls, json_file):
-        """Constructs a `BertConfig` from a json file of parameters."""
+        """Constructs a `AlbertConfig` from a json file of parameters."""
         with open(json_file, "r", encoding='utf-8') as reader:
             text = reader.read()
         return cls.from_dict(json.loads(text))

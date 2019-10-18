@@ -690,7 +690,7 @@ class NovoGrad(Optimizer):
 #
 class Lamb(Optimizer):
     r"""Implements Lamb algorithm.
-    It has been proposed in `Large Batch Optimization for Deep Learning: Training BERT in 76 minutes`_.
+    It has been proposed in `Large Batch Optimization for Deep Learning: Training ALBERT in 76 minutes`_.
     Arguments:
         params (iterable): iterable of parameters to optimize or dicts defining
             parameter groups
@@ -702,7 +702,7 @@ class Lamb(Optimizer):
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
         adam (bool, optional): always use trust ratio = 1, which turns this into
             Adam. Useful for comparison purposes.
-    .. _Large Batch Optimization for Deep Learning: Training BERT in 76 minutes:
+    .. _Large Batch Optimization for Deep Learning: Training ALBERT in 76 minutes:
         https://arxiv.org/abs/1904.00962
     Example:
         >>> model = ResNet()
@@ -1445,7 +1445,7 @@ class Ranger(Optimizer):
         return loss
 
 class BertAdam(Optimizer):
-    """Implements BERT version of Adam algorithm with weight decay fix.
+    """Implements ALBERT version of Adam algorithm with weight decay fix.
     Params:
         lr: learning rate
         warmup: portion of t_total for the warmup, -1  means no warmup. Default: -1

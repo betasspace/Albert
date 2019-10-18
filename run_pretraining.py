@@ -13,9 +13,9 @@ from torch.utils.data.distributed import DistributedSampler
 from common.tools import AverageMeter
 from common.metrics import LMAccuracy
 from torch.nn import CrossEntropyLoss, MSELoss
-from model.modeling_albert import BertForPreTraining, BertConfig
+from model.modeling_albert import AlbertForPreTraining, AlbertConfig
 from model.file_utils import CONFIG_NAME
-from model.tokenization_bert import BertTokenizer
+from model.tokenization_albert import AlbertTokenizer
 from model.optimization import AdamW, WarmupLinearSchedule
 from callback.optimizater import Lamb
 from common.tools import seed_everything
@@ -191,7 +191,7 @@ def main():
             f"Invalid gradient_accumulation_steps parameter: {args.gradient_accumulation_steps}, should be >= 1")
     args.train_batch_size = args.train_batch_size // args.gradient_accumulation_steps
     seed_everything(args.seed)
-    tokenizer = BertTokenizer(vocab_file=config['albert_vocab_path'])
+    tokenizer = AlbertTokenizer(vocab_file=config['albert_vocab_path'])
     total_train_examples = samples_per_epoch * args.epochs
 
     num_train_optimization_steps = int(
@@ -200,9 +200,9 @@ def main():
         num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
     args.warmup_steps = int(num_train_optimization_steps * args.warmup_proportion)
 
-    bert_config = BertConfig.from_pretrained(str(config['albert_config_path']),share_type=args.share_type)
-    model = BertForPreTraining(config=bert_config)
-    # model = BertForMaskedLM.from_pretrained(config['checkpoint_dir'] / 'checkpoint-580000')
+    bert_config = AlbertConfig.from_pretrained(str(config['albert_config_path']),share_type=args.share_type)
+    model = AlbertForPreTraining(config=bert_config)
+    # model = AlbertForMaskedLM.from_pretrained(config['checkpoint_dir'] / 'checkpoint-580000')
     model.to(device)
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())

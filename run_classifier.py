@@ -1,16 +1,16 @@
 from __future__ import absolute_import, division, print_function
 import argparse
 import torch
-from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler, TensorDataset)
+from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler)
 from model.file_utils import WEIGHTS_NAME, CONFIG_NAME
-from model.modeling_albert import BertConfig
+from model.modeling_albert import AlbertConfig
 from model.optimization import AdamW, WarmupLinearSchedule
 from common.tools import seed_everything
 from common.tools import logger, init_logger
 from configs.base import config
-from model.modeling_albert import BertForSequenceClassification
+from model.modeling_albert import AlbertForSequenceClassification
 from callback.progressbar import ProgressBar
-from lcqmc_progressor import BertProcessor
+from lcqmc_progressor import AlbertProcessor
 from common.metrics import Accuracy
 from common.tools import AverageMeter
 
@@ -245,14 +245,14 @@ def main():
     # Set seed
     seed_everything(args.seed)
     # --------- data
-    processor = BertProcessor(vocab_path=config['albert_vocab_path'], do_lower_case=args.do_lower_case)
+    processor = AlbertProcessor(vocab_path=config['albert_vocab_path'], do_lower_case=args.do_lower_case)
     label_list = processor.get_labels()
     num_labels = len(label_list)
 
     if args.local_rank not in [-1, 0]:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
-    bert_config = BertConfig.from_pretrained(str(config['albert_config_path']),
+    bert_config = AlbertConfig.from_pretrained(str(config['albert_config_path']),
                                              share_type=args.share_type, num_labels=num_labels)
 
     logger.info("Training/evaluation parameters %s", args)
@@ -285,7 +285,7 @@ def main():
         valid_sampler = SequentialSampler(valid_dataset)
         valid_dataloader = DataLoader(valid_dataset, sampler=valid_sampler, batch_size=args.eval_batch_size)
 
-        model = BertForSequenceClassification.from_pretrained(config['bert_dir'], config=bert_config)
+        model = AlbertForSequenceClassification.from_pretrained(config['bert_dir'], config=bert_config)
         if args.local_rank == 0:
             torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
         model.to(args.device)
@@ -306,7 +306,7 @@ def main():
         test_dataset = processor.create_dataset(test_features)
         test_sampler = SequentialSampler(test_dataset)
         test_dataloader = DataLoader(test_dataset, sampler=test_sampler, batch_size=args.eval_batch_size)
-        model = BertForSequenceClassification.from_pretrained(args.model_save_path, config=bert_config)
+        model = AlbertForSequenceClassification.from_pretrained(args.model_save_path, config=bert_config)
         model.to(args.device)
         test_log = evaluate(args, model, test_dataloader, metrics)
         print(test_log)
