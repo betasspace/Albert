@@ -23,7 +23,7 @@ base_model()
 	OUTPUT_DIR=pretrain/pytorch/albert_base_zh
 
 	python run_classifier.py \
-		--arch albert_large \
+		--arch albert_base \
 		--albert_config_path ${OUTPUT_DIR}/albert_config_base.json \
 		--bert_dir ${OUTPUT_DIR} \
 		--do_test
@@ -45,7 +45,7 @@ xlarge_model()
 	OUTPUT_DIR=pretrain/pytorch/albert_xlarge_zh
 
 	python run_classifier.py \
-		--arch albert_large \
+		--arch albert_xlarge \
 		--albert_config_path ${OUTPUT_DIR}/albert_config_xlarge.json \
 		--bert_dir ${OUTPUT_DIR} \
 		--do_test
