@@ -27,7 +27,7 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
-from .modeling_utils import PreTrainedModel, prune_linear_layer
+from .modeling_utils import PreTrainedModel
 from .configuration_albert import AlbertConfig
 from .file_utils import add_start_docstrings
 
@@ -286,31 +286,7 @@ class AlbertAttention(nn.Module):
         super(AlbertAttention, self).__init__()
         self.self = AlbertSelfAttention(config)
         self.output = AlbertSelfOutput(config)
-        self.pruned_heads = set()
         self.ln_type = config.ln_type
-
-    def prune_heads(self, heads):
-        if len(heads) == 0:
-            return
-        mask = torch.ones(self.self.num_attention_heads, self.self.attention_head_size)
-        heads = set(heads) - self.pruned_heads  # Convert to set and emove already pruned heads
-        for head in heads:
-            # Compute how many pruned heads are before the head and move the index accordingly
-            head = head - sum(1 if h < head else 0 for h in self.pruned_heads)
-            mask[head] = 0
-        mask = mask.view(-1).contiguous().eq(1)
-        index = torch.arange(len(mask))[mask].long()
-
-        # Prune linear layers
-        self.self.query = prune_linear_layer(self.self.query, index)
-        self.self.key = prune_linear_layer(self.self.key, index)
-        self.self.value = prune_linear_layer(self.self.value, index)
-        self.output.dense = prune_linear_layer(self.output.dense, index, dim=1)
-
-        # Update hyper params and store pruned heads
-        self.self.num_attention_heads = self.self.num_attention_heads - len(heads)
-        self.self.all_head_size = self.self.attention_head_size * self.self.num_attention_heads
-        self.pruned_heads = self.pruned_heads.union(heads)
 
     def forward(self, input_tensor, attention_mask, head_mask=None):
         if self.ln_type == 'preln':
@@ -680,20 +656,6 @@ class AlbertModel(AlbertPreTrainedModel):
         #   )
         # )
 
-    # xxxx3333
-    # def _resize_token_embeddings(self, new_num_tokens):
-    #     old_embeddings = self.embeddings.word_embeddings
-    #     new_embeddings = self._get_resized_embeddings(old_embeddings, new_num_tokens)
-    #     self.embeddings.word_embeddings = new_embeddings
-    #     return self.embeddings.word_embeddings
-
-    def _prune_heads(self, heads_to_prune):
-        """ Prunes heads of the model.
-            heads_to_prune: dict of {layer_num: list of heads to prune in this layer}
-            See base class PreTrainedModel
-        """
-        for layer, heads in heads_to_prune.items():
-            self.encoder.layer[layer].attention.prune_heads(heads)
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None):
         # pdb.set_trace()

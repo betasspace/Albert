@@ -56,7 +56,6 @@ class PretrainedConfig(object):
         self.output_attentions = kwargs.pop('output_attentions', False)
         self.output_hidden_states = kwargs.pop('output_hidden_states', False)
         self.torchscript = kwargs.pop('torchscript', False)
-        self.pruned_heads = kwargs.pop('pruned_heads', {})
         # pdb.set_trace()
         # (Pdb) a
         # self = {
@@ -64,7 +63,6 @@ class PretrainedConfig(object):
         #   "num_labels": 2,
         #   "output_attentions": false,
         #   "output_hidden_states": false,
-        #   "pruned_heads": {},
         #   "torchscript": false
         # }
 
@@ -169,8 +167,6 @@ class PretrainedConfig(object):
         # Load config
         config = cls.from_json_file(resolved_config_file)
 
-        if hasattr(config, 'pruned_heads'):
-            config.pruned_heads = dict((int(key), set(value)) for key, value in config.pruned_heads.items())
 
         # Update config with kwargs if needed
         to_remove = []
