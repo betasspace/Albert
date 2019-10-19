@@ -20,6 +20,8 @@ usage()
 
 base_model()
 {
+        mkdir -p outputs/checkpoints/albert_base
+
 	OUTPUT_DIR=pretrain/pytorch/albert_base_zh
 
 	python run_classifier.py \
@@ -33,6 +35,8 @@ base_model()
 
 large_model()
 {
+        mkdir -p outputs/checkpoints/albert_large
+
 	OUTPUT_DIR=pretrain/pytorch/albert_large_zh
 
 	python run_classifier.py \
@@ -46,6 +50,8 @@ large_model()
 
 xlarge_model()
 {
+        mkdir -p outputs/checkpoints/albert_xlarge
+
 	OUTPUT_DIR=pretrain/pytorch/albert_xlarge_zh
 
 	python run_classifier.py \
