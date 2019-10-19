@@ -4,7 +4,7 @@ from callback.progressbar import ProgressBar
 from model.tokenization_albert import AlbertTokenizer
 from common.tools import logger
 from torch.utils.data import TensorDataset
-
+import pdb
 
 class InputExample(object):
     def __init__(self, guid, text_a, text_b=None, label=None):

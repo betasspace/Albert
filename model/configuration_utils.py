@@ -26,6 +26,8 @@ from io import open
 
 from .file_utils import cached_path, CONFIG_NAME
 
+import pdb
+
 logger = logging.getLogger(__name__)
 
 class PretrainedConfig(object):

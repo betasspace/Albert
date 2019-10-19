@@ -23,6 +23,7 @@ import torch
 from torch import nn
 from .configuration_utils import PretrainedConfig
 from .file_utils import cached_path, WEIGHTS_NAME, TF_WEIGHTS_NAME
+import pdb
 
 logger = logging.getLogger(__name__)
 
@@ -74,39 +75,40 @@ class PreTrainedModel(nn.Module):
         # Save config in model
         self.config = config
 
-    def _get_resized_embeddings(self, old_embeddings, new_num_tokens=None):
-        """ Build a resized Embedding Module from a provided token Embedding Module.
-            Increasing the size will add newly initialized vectors at the end
-            Reducing the size will remove vectors from the end
+    # xxxx3333
+    # def _get_resized_embeddings(self, old_embeddings, new_num_tokens=None):
+    #     """ Build a resized Embedding Module from a provided token Embedding Module.
+    #         Increasing the size will add newly initialized vectors at the end
+    #         Reducing the size will remove vectors from the end
 
-        Args:
-            new_num_tokens: (`optional`) int
-                New number of tokens in the embedding matrix.
-                Increasing the size will add newly initialized vectors at the end
-                Reducing the size will remove vectors from the end
-                If not provided or None: return the provided token Embedding Module.
-        Return: ``torch.nn.Embeddings``
-            Pointer to the resized Embedding Module or the old Embedding Module if new_num_tokens is None
-        """
-        if new_num_tokens is None:
-            return old_embeddings
+    #     Args:
+    #         new_num_tokens: (`optional`) int
+    #             New number of tokens in the embedding matrix.
+    #             Increasing the size will add newly initialized vectors at the end
+    #             Reducing the size will remove vectors from the end
+    #             If not provided or None: return the provided token Embedding Module.
+    #     Return: ``torch.nn.Embeddings``
+    #         Pointer to the resized Embedding Module or the old Embedding Module if new_num_tokens is None
+    #     """
+    #     if new_num_tokens is None:
+    #         return old_embeddings
 
-        old_num_tokens, old_embedding_dim = old_embeddings.weight.size()
-        if old_num_tokens == new_num_tokens:
-            return old_embeddings
+    #     old_num_tokens, old_embedding_dim = old_embeddings.weight.size()
+    #     if old_num_tokens == new_num_tokens:
+    #         return old_embeddings
 
-        # Build new embeddings
-        new_embeddings = nn.Embedding(new_num_tokens, old_embedding_dim)
-        new_embeddings.to(old_embeddings.weight.device)
+    #     # Build new embeddings
+    #     new_embeddings = nn.Embedding(new_num_tokens, old_embedding_dim)
+    #     new_embeddings.to(old_embeddings.weight.device)
 
-        # initialize all new embeddings (in particular added tokens)
-        self._init_weights(new_embeddings)
+    #     # initialize all new embeddings (in particular added tokens)
+    #     self._init_weights(new_embeddings)
 
-        # Copy word embeddings from the previous weights
-        num_tokens_to_copy = min(old_num_tokens, new_num_tokens)
-        new_embeddings.weight.data[:num_tokens_to_copy, :] = old_embeddings.weight.data[:num_tokens_to_copy, :]
+    #     # Copy word embeddings from the previous weights
+    #     num_tokens_to_copy = min(old_num_tokens, new_num_tokens)
+    #     new_embeddings.weight.data[:num_tokens_to_copy, :] = old_embeddings.weight.data[:num_tokens_to_copy, :]
 
-        return new_embeddings
+    #     return new_embeddings
 
     def _tie_or_clone_weights(self, first_module, second_module):
         """ Tie or clone module weights depending of weither we are using TorchScript or not
@@ -142,33 +144,34 @@ class PreTrainedModel(nn.Module):
                 0
             )
 
-    def resize_token_embeddings(self, new_num_tokens=None):
-        """ Resize input token embeddings matrix of the model if new_num_tokens != config.vocab_size.
-        Take care of tying weights embeddings afterwards if the model class has a `tie_weights()` method.
+    # xxxx3333
+    # def resize_token_embeddings(self, new_num_tokens=None):
+    #     """ Resize input token embeddings matrix of the model if new_num_tokens != config.vocab_size.
+    #     Take care of tying weights embeddings afterwards if the model class has a `tie_weights()` method.
 
-        Arguments:
+    #     Arguments:
 
-            new_num_tokens: (`optional`) int:
-                New number of tokens in the embedding matrix. Increasing the size will add newly initialized vectors at the end. Reducing the size will remove vectors from the end. 
-                If not provided or None: does nothing and just returns a pointer to the input tokens ``torch.nn.Embeddings`` Module of the model.
+    #         new_num_tokens: (`optional`) int:
+    #             New number of tokens in the embedding matrix. Increasing the size will add newly initialized vectors at the end. Reducing the size will remove vectors from the end. 
+    #             If not provided or None: does nothing and just returns a pointer to the input tokens ``torch.nn.Embeddings`` Module of the model.
 
-        Return: ``torch.nn.Embeddings``
-            Pointer to the input tokens Embeddings Module of the model
-        """
-        base_model = getattr(self, self.base_model_prefix, self)  # get the base model if needed
-        model_embeds = base_model._resize_token_embeddings(new_num_tokens)
-        if new_num_tokens is None:
-            return model_embeds
+    #     Return: ``torch.nn.Embeddings``
+    #         Pointer to the input tokens Embeddings Module of the model
+    #     """
+    #     base_model = getattr(self, self.base_model_prefix, self)  # get the base model if needed
+    #     model_embeds = base_model._resize_token_embeddings(new_num_tokens)
+    #     if new_num_tokens is None:
+    #         return model_embeds
 
-        # Update base model and current model config
-        self.config.vocab_size = new_num_tokens
-        base_model.vocab_size = new_num_tokens
+    #     # Update base model and current model config
+    #     self.config.vocab_size = new_num_tokens
+    #     base_model.vocab_size = new_num_tokens
 
-        # Tie weights again if needed
-        if hasattr(self, 'tie_weights'):
-            self.tie_weights()
+    #     # Tie weights again if needed
+    #     if hasattr(self, 'tie_weights'):
+    #         self.tie_weights()
 
-        return model_embeds
+    #     return model_embeds
 
     def init_weights(self):
         """ Initialize and prunes weights if needed. """
@@ -413,128 +416,130 @@ class PreTrainedModel(nn.Module):
         return model
 
 
-class Conv1D(nn.Module):
-    def __init__(self, nf, nx):
-        """ Conv1D layer as defined by Radford et al. for OpenAI GPT (and also used in GPT-2)
-            Basically works like a Linear layer but the weights are transposed
-        """
-        super(Conv1D, self).__init__()
-        self.nf = nf
-        w = torch.empty(nx, nf)
-        nn.init.normal_(w, std=0.02)
-        self.weight = nn.Parameter(w)
-        self.bias = nn.Parameter(torch.zeros(nf))
+# xxxx3333
+# class Conv1D(nn.Module):
+#     def __init__(self, nf, nx):
+#         """ Conv1D layer as defined by Radford et al. for OpenAI GPT (and also used in GPT-2)
+#             Basically works like a Linear layer but the weights are transposed
+#         """
+#         super(Conv1D, self).__init__()
+#         self.nf = nf
+#         w = torch.empty(nx, nf)
+#         nn.init.normal_(w, std=0.02)
+#         self.weight = nn.Parameter(w)
+#         self.bias = nn.Parameter(torch.zeros(nf))
 
-    def forward(self, x):
-        size_out = x.size()[:-1] + (self.nf,)
-        x = torch.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)
-        x = x.view(*size_out)
-        return x
-
-
-class PoolerStartLogits(nn.Module):
-    """ Compute SQuAD start_logits from sequence hidden states. """
-    def __init__(self, config):
-        super(PoolerStartLogits, self).__init__()
-        self.dense = nn.Linear(config.hidden_size, 1)
-
-    def forward(self, hidden_states, p_mask=None):
-        """ Args:
-            **p_mask**: (`optional`) ``torch.FloatTensor`` of shape `(batch_size, seq_len)`
-                invalid position mask such as query and special symbols (PAD, SEP, CLS)
-                1.0 means token should be masked.
-        """
-        x = self.dense(hidden_states).squeeze(-1)
-
-        if p_mask is not None:
-            x = x * (1 - p_mask) - 1e30 * p_mask
-
-        return x
+#     def forward(self, x):
+#         size_out = x.size()[:-1] + (self.nf,)
+#         x = torch.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)
+#         x = x.view(*size_out)
+#         return x
 
 
-class PoolerEndLogits(nn.Module):
-    """ Compute SQuAD end_logits from sequence hidden states and start token hidden state.
-    """
-    def __init__(self, config):
-        super(PoolerEndLogits, self).__init__()
-        self.dense_0 = nn.Linear(config.hidden_size * 2, config.hidden_size)
-        self.activation = nn.Tanh()
-        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-        self.dense_1 = nn.Linear(config.hidden_size, 1)
+# xxxx3333
+# class PoolerStartLogits(nn.Module):
+#     """ Compute SQuAD start_logits from sequence hidden states. """
+#     def __init__(self, config):
+#         super(PoolerStartLogits, self).__init__()
+#         self.dense = nn.Linear(config.hidden_size, 1)
 
-    def forward(self, hidden_states, start_states=None, start_positions=None, p_mask=None):
-        """ Args:
-            One of ``start_states``, ``start_positions`` should be not None.
-            If both are set, ``start_positions`` overrides ``start_states``.
+#     def forward(self, hidden_states, p_mask=None):
+#         """ Args:
+#             **p_mask**: (`optional`) ``torch.FloatTensor`` of shape `(batch_size, seq_len)`
+#                 invalid position mask such as query and special symbols (PAD, SEP, CLS)
+#                 1.0 means token should be masked.
+#         """
+#         x = self.dense(hidden_states).squeeze(-1)
 
-            **start_states**: ``torch.LongTensor`` of shape identical to hidden_states
-                hidden states of the first tokens for the labeled span.
-            **start_positions**: ``torch.LongTensor`` of shape ``(batch_size,)``
-                position of the first token for the labeled span:
-            **p_mask**: (`optional`) ``torch.FloatTensor`` of shape ``(batch_size, seq_len)``
-                Mask of invalid position such as query and special symbols (PAD, SEP, CLS)
-                1.0 means token should be masked.
-        """
-        assert start_states is not None or start_positions is not None, "One of start_states, start_positions should be not None"
-        if start_positions is not None:
-            slen, hsz = hidden_states.shape[-2:]
-            start_positions = start_positions[:, None, None].expand(-1, -1, hsz) # shape (bsz, 1, hsz)
-            start_states = hidden_states.gather(-2, start_positions) # shape (bsz, 1, hsz)
-            start_states = start_states.expand(-1, slen, -1) # shape (bsz, slen, hsz)
+#         if p_mask is not None:
+#             x = x * (1 - p_mask) - 1e30 * p_mask
 
-        x = self.dense_0(torch.cat([hidden_states, start_states], dim=-1))
-        x = self.activation(x)
-        x = self.LayerNorm(x)
-        x = self.dense_1(x).squeeze(-1)
-
-        if p_mask is not None:
-            x = x * (1 - p_mask) - 1e30 * p_mask
-
-        return x
+#         return x
 
 
-class PoolerAnswerClass(nn.Module):
-    """ Compute SQuAD 2.0 answer class from classification and start tokens hidden states. """
-    def __init__(self, config):
-        super(PoolerAnswerClass, self).__init__()
-        self.dense_0 = nn.Linear(config.hidden_size * 2, config.hidden_size)
-        self.activation = nn.Tanh()
-        self.dense_1 = nn.Linear(config.hidden_size, 1, bias=False)
+# class PoolerEndLogits(nn.Module):
+#     """ Compute SQuAD end_logits from sequence hidden states and start token hidden state.
+#     """
+#     def __init__(self, config):
+#         super(PoolerEndLogits, self).__init__()
+#         self.dense_0 = nn.Linear(config.hidden_size * 2, config.hidden_size)
+#         self.activation = nn.Tanh()
+#         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+#         self.dense_1 = nn.Linear(config.hidden_size, 1)
 
-    def forward(self, hidden_states, start_states=None, start_positions=None, cls_index=None):
-        """
-        Args:
-            One of ``start_states``, ``start_positions`` should be not None.
-            If both are set, ``start_positions`` overrides ``start_states``.
+#     def forward(self, hidden_states, start_states=None, start_positions=None, p_mask=None):
+#         """ Args:
+#             One of ``start_states``, ``start_positions`` should be not None.
+#             If both are set, ``start_positions`` overrides ``start_states``.
 
-            **start_states**: ``torch.LongTensor`` of shape identical to ``hidden_states``.
-                hidden states of the first tokens for the labeled span.
-            **start_positions**: ``torch.LongTensor`` of shape ``(batch_size,)``
-                position of the first token for the labeled span.
-            **cls_index**: torch.LongTensor of shape ``(batch_size,)``
-                position of the CLS token. If None, take the last token.
+#             **start_states**: ``torch.LongTensor`` of shape identical to hidden_states
+#                 hidden states of the first tokens for the labeled span.
+#             **start_positions**: ``torch.LongTensor`` of shape ``(batch_size,)``
+#                 position of the first token for the labeled span:
+#             **p_mask**: (`optional`) ``torch.FloatTensor`` of shape ``(batch_size, seq_len)``
+#                 Mask of invalid position such as query and special symbols (PAD, SEP, CLS)
+#                 1.0 means token should be masked.
+#         """
+#         assert start_states is not None or start_positions is not None, "One of start_states, start_positions should be not None"
+#         if start_positions is not None:
+#             slen, hsz = hidden_states.shape[-2:]
+#             start_positions = start_positions[:, None, None].expand(-1, -1, hsz) # shape (bsz, 1, hsz)
+#             start_states = hidden_states.gather(-2, start_positions) # shape (bsz, 1, hsz)
+#             start_states = start_states.expand(-1, slen, -1) # shape (bsz, slen, hsz)
 
-            note(Original repo):
-                no dependency on end_feature so that we can obtain one single `cls_logits`
-                for each sample
-        """
-        hsz = hidden_states.shape[-1]
-        assert start_states is not None or start_positions is not None, "One of start_states, start_positions should be not None"
-        if start_positions is not None:
-            start_positions = start_positions[:, None, None].expand(-1, -1, hsz) # shape (bsz, 1, hsz)
-            start_states = hidden_states.gather(-2, start_positions).squeeze(-2) # shape (bsz, hsz)
+#         x = self.dense_0(torch.cat([hidden_states, start_states], dim=-1))
+#         x = self.activation(x)
+#         x = self.LayerNorm(x)
+#         x = self.dense_1(x).squeeze(-1)
 
-        if cls_index is not None:
-            cls_index = cls_index[:, None, None].expand(-1, -1, hsz) # shape (bsz, 1, hsz)
-            cls_token_state = hidden_states.gather(-2, cls_index).squeeze(-2) # shape (bsz, hsz)
-        else:
-            cls_token_state = hidden_states[:, -1, :] # shape (bsz, hsz)
+#         if p_mask is not None:
+#             x = x * (1 - p_mask) - 1e30 * p_mask
 
-        x = self.dense_0(torch.cat([start_states, cls_token_state], dim=-1))
-        x = self.activation(x)
-        x = self.dense_1(x).squeeze(-1)
+#         return x
 
-        return x
+
+# class PoolerAnswerClass(nn.Module):
+#     """ Compute SQuAD 2.0 answer class from classification and start tokens hidden states. """
+#     def __init__(self, config):
+#         super(PoolerAnswerClass, self).__init__()
+#         self.dense_0 = nn.Linear(config.hidden_size * 2, config.hidden_size)
+#         self.activation = nn.Tanh()
+#         self.dense_1 = nn.Linear(config.hidden_size, 1, bias=False)
+
+#     def forward(self, hidden_states, start_states=None, start_positions=None, cls_index=None):
+#         """
+#         Args:
+#             One of ``start_states``, ``start_positions`` should be not None.
+#             If both are set, ``start_positions`` overrides ``start_states``.
+
+#             **start_states**: ``torch.LongTensor`` of shape identical to ``hidden_states``.
+#                 hidden states of the first tokens for the labeled span.
+#             **start_positions**: ``torch.LongTensor`` of shape ``(batch_size,)``
+#                 position of the first token for the labeled span.
+#             **cls_index**: torch.LongTensor of shape ``(batch_size,)``
+#                 position of the CLS token. If None, take the last token.
+
+#             note(Original repo):
+#                 no dependency on end_feature so that we can obtain one single `cls_logits`
+#                 for each sample
+#         """
+#         hsz = hidden_states.shape[-1]
+#         assert start_states is not None or start_positions is not None, "One of start_states, start_positions should be not None"
+#         if start_positions is not None:
+#             start_positions = start_positions[:, None, None].expand(-1, -1, hsz) # shape (bsz, 1, hsz)
+#             start_states = hidden_states.gather(-2, start_positions).squeeze(-2) # shape (bsz, hsz)
+
+#         if cls_index is not None:
+#             cls_index = cls_index[:, None, None].expand(-1, -1, hsz) # shape (bsz, 1, hsz)
+#             cls_token_state = hidden_states.gather(-2, cls_index).squeeze(-2) # shape (bsz, hsz)
+#         else:
+#             cls_token_state = hidden_states[:, -1, :] # shape (bsz, hsz)
+
+#         x = self.dense_0(torch.cat([start_states, cls_token_state], dim=-1))
+#         x = self.activation(x)
+#         x = self.dense_1(x).squeeze(-1)
+
+#         return x
 
 def prune_linear_layer(layer, index, dim=0):
     """ Prune a linear layer (a model parameters) to keep only entries in index.

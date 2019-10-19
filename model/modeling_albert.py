@@ -680,11 +680,12 @@ class AlbertModel(AlbertPreTrainedModel):
         #   )
         # )
 
-    def _resize_token_embeddings(self, new_num_tokens):
-        old_embeddings = self.embeddings.word_embeddings
-        new_embeddings = self._get_resized_embeddings(old_embeddings, new_num_tokens)
-        self.embeddings.word_embeddings = new_embeddings
-        return self.embeddings.word_embeddings
+    # xxxx3333
+    # def _resize_token_embeddings(self, new_num_tokens):
+    #     old_embeddings = self.embeddings.word_embeddings
+    #     new_embeddings = self._get_resized_embeddings(old_embeddings, new_num_tokens)
+    #     self.embeddings.word_embeddings = new_embeddings
+    #     return self.embeddings.word_embeddings
 
     def _prune_heads(self, heads_to_prune):
         """ Prunes heads of the model.
@@ -758,8 +759,8 @@ class AlbertModel(AlbertPreTrainedModel):
         sequence_output = encoder_outputs[0]
         pooled_output = self.pooler(sequence_output)
 
-        outputs = (sequence_output, pooled_output,) + encoder_outputs[
-            1:]  # add hidden_states and attentions if they are here
+        # add hidden_states and attentions if they are here
+        outputs = (sequence_output, pooled_output,) + encoder_outputs[1:]
 
         # pdb.set_trace()
         # (Pdb) len(encoder_outputs),encoder_outputs[0].size()
