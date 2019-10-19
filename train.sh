@@ -29,7 +29,7 @@ base_model()
 		--albert_config_path ${OUTPUT_DIR}/albert_config_base.json \
 		--bert_dir ${OUTPUT_DIR} \
 		--train_batch_size 24 \
-		--num_train_epochs 10 \
+		--num_train_epochs 1 \
 		--do_train 
 }
 

@@ -657,9 +657,6 @@ class AlbertModel(AlbertPreTrainedModel):
         return outputs  # sequence_output, pooled_output, (hidden_states), (attentions)
 
 
-@add_start_docstrings("""Albert Model with two heads on top as done during the pre-training:
-    a `masked language modeling` head and a `next sentence prediction (classification)` head. """,
-                      BERT_START_DOCSTRING, BERT_INPUTS_DOCSTRING)
 class AlbertForPreTraining(AlbertPreTrainedModel):
     r"""
         **masked_lm_labels**: (`optional`) ``torch.LongTensor`` of shape ``(batch_size, sequence_length)``:
@@ -797,9 +794,6 @@ class AlbertForPreTraining(AlbertPreTrainedModel):
 
 
 #
-@add_start_docstrings("""Albert Model transformer with a sequence classification/regression head on top (a linear layer on top of
-    the pooled output) e.g. for GLUE tasks. """,
-                      BERT_START_DOCSTRING, BERT_INPUTS_DOCSTRING)
 class AlbertForSequenceClassification(AlbertPreTrainedModel):
     r"""
         **labels**: (`optional`) ``torch.LongTensor`` of shape ``(batch_size,)``:
