@@ -55,10 +55,21 @@ class PretrainedConfig(object):
         self.output_hidden_states = kwargs.pop('output_hidden_states', False)
         self.torchscript = kwargs.pop('torchscript', False)
         self.pruned_heads = kwargs.pop('pruned_heads', {})
+        # pdb.set_trace()
+        # (Pdb) a
+        # self = {
+        #   "finetuning_task": null,
+        #   "num_labels": 2,
+        #   "output_attentions": false,
+        #   "output_hidden_states": false,
+        #   "pruned_heads": {},
+        #   "torchscript": false
+        # }
+
 
     def save_pretrained(self, save_directory):
         """ Save a configuration object to the directory `save_directory`, so that it
-            can be re-loaded using the :func:`~pytorch_transformers.PretrainedConfig.from_pretrained` class method.
+            can be re-loaded using the :func:`~PretrainedConfig.from_pretrained` class method.
         """
         assert os.path.isdir(save_directory), "Saving path should be a directory where the model and configuration can be saved"
 

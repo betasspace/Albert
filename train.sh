@@ -20,7 +20,7 @@ usage()
 
 base_model()
 {
-	OUTPUT_DIR=pretrain/pytorch/${MODEL}
+	OUTPUT_DIR=pretrain/pytorch/albert_base_zh
 
 	python run_classifier.py \
 		--arch albert_base \

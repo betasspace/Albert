@@ -41,6 +41,9 @@ class AlbertProcessor(object):
     """Base class for data converters for sequence classification data sets."""
 
     def __init__(self, vocab_path, do_lower_case):
+        # pdb.set_trace()
+        # vocab_path = PosixPath('configs/vocab.txt')
+        # do_lower_case = False        
         self.tokenizer = AlbertTokenizer(vocab_path, do_lower_case)
 
     def get_train(self, data_file):
@@ -116,6 +119,8 @@ class AlbertProcessor(object):
         #  type_ids:   0   0   0   0  0     0   0
         '''
         pbar = ProgressBar(n_total=len(examples), desc='create features')
+        # pdb.set_trace()
+        # cached_features_file = PosixPath('dataset/lcqmc/cached_test_features_64_albert_base')
         if cached_features_file.exists():
             logger.info("Loading features from cached file %s", cached_features_file)
             features = torch.load(cached_features_file)
@@ -143,6 +148,16 @@ class AlbertProcessor(object):
                     segment_ids += [1] * (len(tokens_b) + 1)
 
                 input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
+                # pdb.set_trace()
+                # (Pdb) pp example.text_a, example.text_b, example.label
+                # ('谁有狂三这张高清的', '这张高清图，谁有', 0)
+                # (Pdb) pp tokens_a, tokens_b
+                # (['谁', '有', '狂', '三', '这', '张', '高', '清', '的'],
+                #  ['这', '张', '高', '清', '图', '，', '谁', '有'])
+                # (Pdb) input_ids
+                # [101, 6443, 3300, 4312, 676, 6821, 2476, 7770, 3926, 4638, 102,
+                #  6821, 2476, 7770, 3926, 1745, 8024, 6443, 3300, 102]
+
                 input_mask = [1] * len(input_ids)
                 padding = [0] * (max_seq_len - len(input_ids))
                 input_len = len(input_ids)

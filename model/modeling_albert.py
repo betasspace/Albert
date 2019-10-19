@@ -31,6 +31,8 @@ from .modeling_utils import PreTrainedModel, prune_linear_layer
 from .configuration_albert import AlbertConfig
 from .file_utils import add_start_docstrings
 
+import pdb
+
 logger = logging.getLogger(__name__)
 
 ALBERT_PRETRAINED_MODEL_ARCHIVE_MAP = {
@@ -174,6 +176,17 @@ class AlbertEmbeddings(nn.Module):
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
+
+        # pdb.set_trace()
+        # (Pdb) words_embeddings.size(),  position_embeddings.size(),  token_type_embeddings.size()
+        # (torch.Size([16, 64, 768]), torch.Size([16, 64, 768]), torch.Size([16, 64, 768]))
+        # (Pdb) words_embeddings.min(), words_embeddings.max(), words_embeddings.mean(), words_embeddings.std()
+        # (tensor(-0.7094, device='cuda:0'), tensor(0.3465, device='cuda:0'), tensor(-0.0025, device='cuda:0'), tensor(0.0594, device='cuda:0'))
+        # (Pdb) position_embeddings.min(), position_embeddings.max(), position_embeddings.mean(), position_embeddings.std()
+        # (tensor(-0.1226, device='cuda:0'), tensor(0.1231, device='cuda:0'), tensor(0.0003, device='cuda:0'), tensor(0.0204, device='cuda:0'))
+        # (Pdb) token_type_embeddings.min(), token_type_embeddings.max()
+        # (tensor(-0.2364, device='cuda:0'), tensor(0.2080, device='cuda:0'))
+
         return embeddings
 
 
@@ -195,6 +208,15 @@ class AlbertSelfAttention(nn.Module):
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+
+        # pdb.set_trace()
+        # (Pdb) self.output_attentions
+        # False
+        # (Pdb) self.all_head_size
+        # 768
+        # (Pdb) self.attention_head_size
+        # 64
+
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
@@ -248,6 +270,10 @@ class AlbertSelfOutput(nn.Module):
     def forward(self, hidden_states, input_tensor):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
+
+        # pdb.set_trace()
+        # (Pdb) pp hidden_states.size(), input_tensor.size()
+        # (torch.Size([16, 64, 768]), torch.Size([16, 64, 768]))
         if self.ln_type == 'preln':
             hidden_states = hidden_states + input_tensor
         else:
@@ -349,23 +375,43 @@ class AlbertLayer(nn.Module):
 
     def forward(self, hidden_states, attention_mask, layer_num, head_mask=None):
         if isinstance(self.attention, nn.ModuleList):
+            pdb.set_trace()
             attention_outputs = self.attention[layer_num](hidden_states, attention_mask, head_mask)
         else:
+            #--> pdb.set_trace()
             attention_outputs = self.attention(hidden_states, attention_mask, head_mask)
         attention_output = attention_outputs[0]
+
         if self.ln_type == 'preln':
+            pdb.set_trace()
             attention_output_pre = self.output.LayerNorm(attention_output)
         else:
+            # --> pdb.set_trace()
             attention_output_pre = attention_output
+
         if isinstance(self.intermediate, nn.ModuleList):
             intermediate_output = self.intermediate[layer_num](attention_output_pre)
+            pdb.set_trace()
         else:
+            # --> pdb.set_trace()
             intermediate_output = self.intermediate(attention_output_pre)
+
         if isinstance(self.output, nn.ModuleList):
+            pdb.set_trace()
             layer_output = self.output[layer_num](intermediate_output, attention_output)
         else:
+            #--> pdb.set_trace()
             layer_output = self.output(intermediate_output, attention_output)
         outputs = (layer_output,) + attention_outputs[1:]  # add attentions if we output them
+
+        # pdb.set_trace()
+        # (Pdb) layer_output.size()
+        # torch.Size([16, 64, 768])
+        # (Pdb) type(attention_outputs),len(attention_outputs),attention_outputs[0].size()
+        # (<class 'tuple'>, 1, torch.Size([16, 64, 768]))
+        # (Pdb) type(outputs), len(outputs), outputs[0].size()
+        # (<class 'tuple'>, 1, torch.Size([16, 64, 768]))
+
         return outputs
 
 
@@ -376,6 +422,9 @@ class AlbertEncoder(nn.Module):
         self.output_hidden_states = config.output_hidden_states
         self.num_hidden_layers = config.num_hidden_layers
         self.share_type = config.share_type
+        # pdb.set_trace()
+        # (Pdb) pp type(config.share_type), config.share_type
+        # (<class 'str'>, 'all')        
         if config.share_type in ['all', 'ffn', 'attention']:
             self.layer_shared = AlbertLayer(config)
         else:
@@ -531,9 +580,9 @@ BERT_INPUTS_DOCSTRING = r"""
                 ``token_type_ids:   0   0   0   0  0     0   0``
             Albert is a model with absolute position embeddings so it's usually advised to pad the inputs on
             the right rather than the left.
-            Indices can be obtained using :class:`pytorch_transformers.AlbertTokenizer`.
-            See :func:`pytorch_transformers.PreTrainedTokenizer.encode` and
-            :func:`pytorch_transformers.PreTrainedTokenizer.convert_tokens_to_ids` for details.
+            Indices can be obtained using :class:`AlbertTokenizer`.
+            See :func:`PreTrainedTokenizer.encode` and
+            :func:`PreTrainedTokenizer.convert_tokens_to_ids` for details.
         **attention_mask**: (`optional`) ``torch.FloatTensor`` of shape ``(batch_size, sequence_length)``:
             Mask to avoid performing attention on padding token indices.
             Mask values selected in ``[0, 1]``:
@@ -590,6 +639,46 @@ class AlbertModel(AlbertPreTrainedModel):
         self.pooler = AlbertPooler(config)
 
         self.init_weights()
+        # pdb.set_trace();
+        # self = AlbertModel(
+        #   (embeddings): AlbertEmbeddings(
+        #     (word_embeddings): Embedding(21128, 128, padding_idx=0)
+        #     (word_embeddings_2): Linear(in_features=128, out_features=768, bias=False)
+        #     (position_embeddings): Embedding(512, 768)
+        #     (token_type_embeddings): Embedding(2, 768)
+        #     (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        #     (dropout): Dropout(p=0.0, inplace=False)
+        #   )
+        #   (encoder): AlbertEncoder(
+        #     (layer_shared): AlbertLayer(
+        #       (attention): AlbertAttention(
+        #         (selfatt): AlbertSelfAttention(
+        #           (query): Linear(in_features=768, out_features=768, bias=True)
+        #           (key): Linear(in_features=768, out_features=768, bias=True)
+        #           (value): Linear(in_features=768, out_features=768, bias=True)
+        #           (dropout): Dropout(p=0.0, inplace=False)
+        #         )
+        #         (attout): AlbertSelfOutput(
+        #           (dense): Linear(in_features=768, out_features=768, bias=True)
+        #           (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        #           (dropout): Dropout(p=0.0, inplace=False)
+        #         )
+        #       )
+        #       (intermediate): AlbertIntermediate(
+        #         (dense): Linear(in_features=768, out_features=3072, bias=True)
+        #       )
+        #       (output): AlbertOutput(
+        #         (dense): Linear(in_features=3072, out_features=768, bias=True)
+        #         (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        #         (dropout): Dropout(p=0.0, inplace=False)
+        #       )
+        #     )
+        #   )
+        #   (pooler): AlbertPooler(
+        #     (dense): Linear(in_features=768, out_features=768, bias=True)
+        #     (activation): Tanh()
+        #   )
+        # )
 
     def _resize_token_embeddings(self, new_num_tokens):
         old_embeddings = self.embeddings.word_embeddings
@@ -606,6 +695,12 @@ class AlbertModel(AlbertPreTrainedModel):
             self.encoder.layer[layer].attention.prune_heads(heads)
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None):
+        # pdb.set_trace()
+        # position_ids = None
+        # head_mask = None
+        # (Pdb) pp input_ids.size(), attention_mask.size(), token_type_ids.size()
+        # (torch.Size([16, 64]), torch.Size([16, 64]), torch.Size([16, 64]))
+
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
         if token_type_ids is None:
@@ -631,6 +726,11 @@ class AlbertModel(AlbertPreTrainedModel):
         # attention_probs has shape bsz x n_heads x N x N
         # input head_mask has shape [num_heads] or [num_hidden_layers x num_heads]
         # and head_mask is converted to shape [num_hidden_layers x batch x num_heads x seq_length x seq_length]
+
+        # pdb.set_trace()
+        # (Pdb) pp extended_attention_mask.size()
+        # torch.Size([16, 1, 1, 64])
+
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.unsqueeze(0).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
@@ -643,15 +743,33 @@ class AlbertModel(AlbertPreTrainedModel):
         else:
             head_mask = [None] * self.config.num_hidden_layers
 
+        # pdb.set_trace()
+        # (Pdb) head_mask
+        # [None, None, None, None, None, None, None, None, None, None, None, None]
         embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
         encoder_outputs = self.encoder(embedding_output,
                                        extended_attention_mask,
                                        head_mask=head_mask)
+
+        # pdb.set_trace()
+        # (Pdb) pp position_ids
+        # None
+
         sequence_output = encoder_outputs[0]
         pooled_output = self.pooler(sequence_output)
 
         outputs = (sequence_output, pooled_output,) + encoder_outputs[
             1:]  # add hidden_states and attentions if they are here
+
+        # pdb.set_trace()
+        # (Pdb) len(encoder_outputs),encoder_outputs[0].size()
+        # (1, torch.Size([16, 64, 768]))
+        # (Pdb) pooled_output.size()
+        # torch.Size([16, 768])
+        # ---------------------------------------
+        # (Pdb) len(outputs),outputs[0].size(), outputs[1].size()
+        # (2, torch.Size([16, 64, 768]), torch.Size([16, 768]))
+
         return outputs  # sequence_output, pooled_output, (hidden_states), (attentions)
 
 
@@ -700,6 +818,61 @@ class AlbertForPreTraining(AlbertPreTrainedModel):
 
         self.init_weights()
         self.tie_weights(config)
+
+        # pdb.set_trace()
+        # (Pdb) a
+        # self = AlbertForPreTraining(
+        #   (bert): AlbertModel(
+        #     (embeddings): AlbertEmbeddings(
+        #       (word_embeddings): Embedding(21128, 128, padding_idx=0)
+        #       (word_embeddings_2): Linear(in_features=128, out_features=768, bias=False)
+        #       (position_embeddings): Embedding(512, 768)
+        #       (token_type_embeddings): Embedding(2, 768)
+        #       (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        #       (dropout): Dropout(p=0.0, inplace=False)
+        #     )
+        #     (encoder): AlbertEncoder(
+        #       (layer_shared): AlbertLayer(
+        #         (attention): AlbertAttention(
+        #           (selfatt): AlbertSelfAttention(
+        #             (query): Linear(in_features=768, out_features=768, bias=True)
+        #             (key): Linear(in_features=768, out_features=768, bias=True)
+        #             (value): Linear(in_features=768, out_features=768, bias=True)
+        #             (dropout): Dropout(p=0.0, inplace=False)
+        #           )
+        #           (attout): AlbertSelfOutput(
+        #             (dense): Linear(in_features=768, out_features=768, bias=True)
+        #             (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        #             (dropout): Dropout(p=0.0, inplace=False)
+        #           )
+        #         )
+        #         (intermediate): AlbertIntermediate(
+        #           (dense): Linear(in_features=768, out_features=3072, bias=True)
+        #         )
+        #         (output): AlbertOutput(
+        #           (dense): Linear(in_features=3072, out_features=768, bias=True)
+        #           (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        #           (dropout): Dropout(p=0.0, inplace=False)
+        #         )
+        #       )
+        #     )
+        #     (pooler): AlbertPooler(
+        #       (dense): Linear(in_features=768, out_features=768, bias=True)
+        #       (activation): Tanh()
+        #     )
+        #   )
+        #   (cls): AlbertPreTrainingHeads(
+        #     (predictions): AlbertLMPredictionHead(
+        #       (transform): AlbertPredictionHeadTransform(
+        #         (dense): Linear(in_features=768, out_features=768, bias=True)
+        #         (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        #       )
+        #       (project_layer): Linear(in_features=768, out_features=128, bias=False)
+        #       (decoder): Linear(in_features=128, out_features=21128, bias=False)
+        #     )
+        #     (seq_relationship): Linear(in_features=768, out_features=2, bias=True)
+        #   )
+        # )
 
     def tie_weights(self, config):
         """ Make sure we are sharing the input and output embeddings.
@@ -801,7 +974,17 @@ class AlbertForSequenceClassification(AlbertPreTrainedModel):
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
 
+        # pdb.set_trace()
+        # (Pdb) len(outputs), outputs[0].size(), outputs[1].size()
+        # (2, torch.Size([16, 64, 768]), torch.Size([16, 768]))
+        # (Pdb) logits.size()
+        # torch.Size([16, 2])
+
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+
+        # pdb.set_trace()
+        # (Pdb) labels
+        # tensor([0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1], device='cuda:0')
 
         if labels is not None:
             if self.num_labels == 1:
@@ -812,5 +995,11 @@ class AlbertForSequenceClassification(AlbertPreTrainedModel):
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             outputs = (loss,) + outputs
+
+        # pdb.set_trace()
+        # (Pdb) loss
+        # (Pdb) len(outputs), outputs[0].size(), outputs[0], outputs[1].size()
+        # (2, torch.Size([]), tensor(0.7460, device='cuda:0'), torch.Size([16, 2]))
+        #         tensor(0.7460, device='cuda:0')
 
         return outputs  # (loss), logits, (hidden_states), (attentions)

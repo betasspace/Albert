@@ -115,13 +115,74 @@ def train(args, train_dataloader, eval_dataloader, metrics, model):
 
 def evaluate(args, model, eval_dataloader, metrics):
     # Eval!
-    logger.info("  Num examples = %d", len(eval_dataloader))
+    logger.info("  Number of examples = %d", len(eval_dataloader))
     logger.info("  Batch size = %d", args.eval_batch_size)
     eval_loss = AverageMeter()
     metrics.reset()
     preds = []
     targets = []
     pbar = ProgressBar(n_total=len(eval_dataloader), desc='Evaluating')
+    # pdb.set_trace()
+    # (Pdb) a
+    # args = Namespace(adam_epsilon=1e-08, albert_config_path=
+    # 'pretrain/pytorch/albert_base_zh/albert_config_base.json', 
+    # arch='albert_base', bert_dir='pretrain/pytorch/albert_base_zh', 
+    # device=device(type='cuda'), do_eval=False, do_lower_case=False, 
+    # do_test=True, do_train=False, eval_all_checkpoints=False, 
+    # eval_batch_size=16, eval_max_seq_len=64, evaluate_during_training=False, 
+    # fp16=False, fp16_opt_level='O1', gradient_accumulation_steps=1, learning_rate=2e-05, 
+    # local_rank=-1, max_grad_norm=5.0, model_save_path=PosixPath('outputs/checkpoints/albert_base'), 
+    # n_gpu=1, no_cuda=False, num_train_epochs=3.0, overwrite_cache=False, 
+    # overwrite_output_dir=False, seed=42, server_ip='', server_port='', 
+    # share_type='all', task_name='lcqmc', train_batch_size=32, train_max_seq_len=64, 
+    # warmup_proportion=0.1, weight_decay=0.1)
+    # 
+    # model = AlbertForSequenceClassification(
+    #   (bert): AlbertModel(
+    #     (embeddings): AlbertEmbeddings(
+    #       (word_embeddings): Embedding(21128, 128, padding_idx=0)
+    #       (word_embeddings_2): Linear(in_features=128, out_features=768, bias=False)
+    #       (position_embeddings): Embedding(512, 768)
+    #       (token_type_embeddings): Embedding(2, 768)
+    #       (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+    #       (dropout): Dropout(p=0.0, inplace=False)
+    #     )
+    #     (encoder): AlbertEncoder(
+    #       (layer_shared): AlbertLayer(
+    #         (attention): AlbertAttention(
+    #           (self): AlbertSelfAttention(
+    #             (query): Linear(in_features=768, out_features=768, bias=True)
+    #             (key): Linear(in_features=768, out_features=768, bias=True)
+    #             (value): Linear(in_features=768, out_features=768, bias=True)
+    #             (dropout): Dropout(p=0.0, inplace=False)
+    #           )
+    #           (output): AlbertSelfOutput(
+    #             (dense): Linear(in_features=768, out_features=768, bias=True)
+    #             (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+    #             (dropout): Dropout(p=0.0, inplace=False)
+    #           )
+    #         )
+    #         (intermediate): AlbertIntermediate(
+    #           (dense): Linear(in_features=768, out_features=3072, bias=True)
+    #         )
+    #         (output): AlbertOutput(
+    #           (dense): Linear(in_features=3072, out_features=768, bias=True)
+    #           (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+    #           (dropout): Dropout(p=0.0, inplace=False)
+    #         )
+    #       )
+    #     )
+    #     (pooler): AlbertPooler(
+    #       (dense): Linear(in_features=768, out_features=768, bias=True)
+    #       (activation): Tanh()
+    #     )
+    #   )
+    #   (dropout): Dropout(p=0.2, inplace=False)
+    #   (classifier): Linear(in_features=768, out_features=2, bias=True)
+    # )
+    # eval_dataloader = <torch.utils.data.dataloader.DataLoader object at 0x7f113f07d668>
+    # metrics = <common.metrics.Accuracy object at 0x7f11a904fa90>
+
     for bid, batch in enumerate(eval_dataloader):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
@@ -136,6 +197,27 @@ def evaluate(args, model, eval_dataloader, metrics):
         preds.append(logits.cpu().detach())
         targets.append(inputs['labels'].cpu().detach())
         pbar(bid)
+        # pdb.set_trace()
+        # (Pdb) pp batch[0].size(), batch[1].size(), batch[2].size(), batch[3].size()
+        # (torch.Size([16, 64]), torch.Size([16, 64]), torch.Size([16, 64]), torch.Size([16]))
+        # (Pdb) inputs['input_ids'][0]
+        # tensor([ 101, 6443, 3300, 4312,  676, 6821, 2476, 7770, 3926, 4638,  102, 6821,
+        #         2476, 7770, 3926, 1745, 8024, 6443, 3300,  102,    0,    0,    0,    0,
+        #            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+        #            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+        #            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+        #            0,    0,    0,    0], device='cuda:0')        
+        # (Pdb) inputs['attention_mask'][0]
+        # tensor([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+        #         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        #         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], device='cuda:0')
+        # (Pdb) inputs['token_type_ids'][0]
+        # tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+        #         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        #         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], device='cuda:0')
+        # (Pdb) inputs['labels']
+        # tensor([0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1], device='cuda:0')
+
     preds = torch.cat(preds, dim=0).cpu().detach()
     targets = torch.cat(targets, dim=0).cpu().detach()
     metrics(preds, targets)
@@ -212,7 +294,7 @@ def main():
     parser.add_argument('--server_port', type=str, default='', help="For distant debugging.")
     args = parser.parse_args()
 
-    # Fix bug: Config is wrone from base.py if it is not base
+    # Fix bug: Config is wrong from base.py if it is not base
     config['bert_dir'] = args.bert_dir
     config['albert_config_path'] = args.albert_config_path
 

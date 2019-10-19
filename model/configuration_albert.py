@@ -35,7 +35,7 @@ ALBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
 
 class AlbertConfig(PretrainedConfig):
     r"""
-    :class:`~pytorch_transformers.AlbertConfig` is the configuration class to store the configuration of a
+    :class:`AlbertConfig` is the configuration class to store the configuration of a
     `AlbertModel`.
 
 

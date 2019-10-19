@@ -108,21 +108,21 @@ class PreTrainedTokenizer(object):
 
     @property
     def cls_token(self):
-        """ Classification token (string). E.g. to extract a summary of an input sequence leveraging self-attention along the full depth of the model. Log an error if used while not having been set. """
+        """ Classification token (string). """
         if self._cls_token is None:
             logger.error("Using cls_token, but it is not set yet.")
         return self._cls_token
 
     @property
     def mask_token(self):
-        """ Mask token (string). E.g. when training a model with masked-language modeling. Log an error if used while not having been set. """
+        """ Mask token (string). E.g. when training a model with masked-language modeling."""
         if self._mask_token is None:
             logger.error("Using mask_token, but it is not set yet.")
         return self._mask_token
 
     @property
     def additional_special_tokens(self):
-        """ All the additional special tokens you may want to use (list of strings). Log an error if used while not having been set. """
+        """ All the additional special tokens you may want to use (list of strings). """
         if self._additional_special_tokens is None:
             logger.error("Using additional_special_tokens, but it is not set yet.")
         return self._additional_special_tokens
@@ -161,42 +161,42 @@ class PreTrainedTokenizer(object):
 
     @property
     def bos_token_id(self):
-        """ Id of the beginning of sentence token in the vocabulary. Log an error if used while not having been set. """
+        """ Id of the beginning of sentence token in the vocabulary."""
         return self.convert_tokens_to_ids(self.bos_token)
 
     @property
     def eos_token_id(self):
-        """ Id of the end of sentence token in the vocabulary. Log an error if used while not having been set. """
+        """ Id of the end of sentence token in the vocabulary."""
         return self.convert_tokens_to_ids(self.eos_token)
 
     @property
     def unk_token_id(self):
-        """ Id of the unknown token in the vocabulary. Log an error if used while not having been set. """
+        """ Id of the unknown token in the vocabulary. """
         return self.convert_tokens_to_ids(self.unk_token)
 
     @property
     def sep_token_id(self):
-        """ Id of the separation token in the vocabulary. E.g. separate context and query in an input sequence. Log an error if used while not having been set. """
+        """ Id of the separation token in the vocabulary. """
         return self.convert_tokens_to_ids(self.sep_token)
 
     @property
     def pad_token_id(self):
-        """ Id of the padding token in the vocabulary. Log an error if used while not having been set. """
+        """ Id of the padding token in the vocabulary."""
         return self.convert_tokens_to_ids(self.pad_token)
 
     @property
     def cls_token_id(self):
-        """ Id of the classification token in the vocabulary. E.g. to extract a summary of an input sequence leveraging self-attention along the full depth of the model. Log an error if used while not having been set. """
+        """ Id of the classification token in the vocabulary."""
         return self.convert_tokens_to_ids(self.cls_token)
 
     @property
     def mask_token_id(self):
-        """ Id of the mask token in the vocabulary. E.g. when training a model with masked-language modeling. Log an error if used while not having been set. """
+        """ Id of the mask token in the vocabulary."""
         return self.convert_tokens_to_ids(self.mask_token)
 
     @property
     def additional_special_tokens_ids(self):
-        """ Ids of all the additional special tokens in the vocabulary (list of integers). Log an error if used while not having been set. """
+        """ Ids of all the additional special tokens in the vocabulary (list of integers)."""
         return self.convert_tokens_to_ids(self.additional_special_tokens)
 
     def __init__(self, max_len=None, **kwargs):
@@ -231,13 +231,13 @@ class PreTrainedTokenizer(object):
     @classmethod
     def from_pretrained(cls, *inputs, **kwargs):
         r"""
-        Instantiate a :class:`~pytorch_transformers.PreTrainedTokenizer` (or a derived class) from a predefined tokenizer.
+        Instantiate a :class:`PreTrainedTokenizer` (or a derived class) from a predefined tokenizer.
 
         Args:
             pretrained_model_name_or_path: either:
 
                 - a string with the `shortcut name` of a predefined tokenizer to load from cache or download, e.g.: ``bert-base-uncased``.
-                - a path to a `directory` containing vocabulary files required by the tokenizer, for instance saved using the :func:`~pytorch_transformers.PreTrainedTokenizer.save_pretrained` method, e.g.: ``./my_model_directory/``.
+                - a path to a `directory` containing vocabulary files required by the tokenizer, for instance saved using the :func:`PreTrainedTokenizer.save_pretrained` method, e.g.: ``./my_model_directory/``.
                 - (not applicable to all derived classes) a path or url to a single saved vocabulary file if and only if the tokenizer only requires a single vocabulary file (e.g. Albert, XLNet), e.g.: ``./my_model_directory/vocab.txt``.
 
             cache_dir: (`optional`) string:
@@ -252,7 +252,7 @@ class PreTrainedTokenizer(object):
 
             inputs: (`optional`) positional arguments: will be passed to the Tokenizer ``__init__`` method.
 
-            kwargs: (`optional`) keyword arguments: will be passed to the Tokenizer ``__init__`` method. Can be used to set special tokens like ``bos_token``, ``eos_token``, ``unk_token``, ``sep_token``, ``pad_token``, ``cls_token``, ``mask_token``, ``additional_special_tokens``. See parameters in the doc string of :class:`~pytorch_transformers.PreTrainedTokenizer` for details.
+            kwargs: (`optional`) keyword arguments: will be passed to the Tokenizer ``__init__`` method. Can be used to set special tokens like ``bos_token``, ``eos_token``, ``unk_token``, ``sep_token``, ``pad_token``, ``cls_token``, ``mask_token``, ``additional_special_tokens``. See parameters in the doc string of :class:`PreTrainedTokenizer` for details.
 
         Examples::
 
@@ -427,7 +427,7 @@ class PreTrainedTokenizer(object):
             This won't save modifications other than (added tokens and special token mapping) you may have
             applied to the tokenizer after the instantion (e.g. modifying tokenizer.do_lower_case after creation).
 
-            This method make sure the full tokenizer can then be re-loaded using the :func:`~pytorch_transformers.PreTrainedTokenizer.from_pretrained` class method.
+            This method make sure the full tokenizer can then be re-loaded using the :func:`PreTrainedTokenizer.from_pretrained` class method.
         """
         if not os.path.isdir(save_directory):
             logger.error("Saving directory ({}) should be a directory".format(save_directory))
@@ -464,7 +464,7 @@ class PreTrainedTokenizer(object):
         """ Save the tokenizer vocabulary to a directory. This method does *NOT* save added tokens
             and special token mappings.
 
-            Please use :func:`~pytorch_transformers.PreTrainedTokenizer.save_pretrained` `()` to save the full Tokenizer state if you want to reload it using the :func:`~pytorch_transformers.PreTrainedTokenizer.from_pretrained` class method.
+            Please use :func:`PreTrainedTokenizer.save_pretrained` `()` to save the full Tokenizer state if you want to reload it using the :func:`~pytorch_transformers.PreTrainedTokenizer.from_pretrained` class method.
         """
         raise NotImplementedError
 
@@ -498,7 +498,7 @@ class PreTrainedTokenizer(object):
 
             num_added_toks = tokenizer.add_tokens(['new_tok1', 'my_new-tok2'])
             print('We have added', num_added_toks, 'tokens')
-            model.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
+            model.resize_token_embeddings(len(tokenizer))
         """
         if not new_tokens:
             return 0
@@ -552,7 +552,7 @@ class PreTrainedTokenizer(object):
 
             num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
             print('We have added', num_added_toks, 'tokens')
-            model.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
+            model.resize_token_embeddings(len(tokenizer))
 
             assert tokenizer.cls_token == '<CLS>'
         """
